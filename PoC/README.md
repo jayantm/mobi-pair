@@ -6,7 +6,7 @@ Mobile Pairing for android
 Phase I
 * Services - for background lisntening of notifications
 * Post notification
-* Read notification
+* Read notification - AccessCheck
 * Cloud syncing
 * Data store (explore firebase/s3/DynamoDB/RDS)
 * Call handling (Miss/Fwd)
