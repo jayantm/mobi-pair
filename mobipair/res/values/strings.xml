@@ -2,12 +2,28 @@
 <resources>
 
     <string name="app_name">mobipair</string>
-    <string name="title_section1">Section 1</string>
-    <string name="title_section2">Section 2</string>
-    <string name="title_section3">Section 3</string>
-    <string name="navigation_drawer_open">Open navigation drawer</string>
-    <string name="navigation_drawer_close">Close navigation drawer</string>
-    <string name="action_example">Example action</string>
+    <string name="title_section1">Dashboard</string>
+    <string name="title_section2">Devices</string>
+    <string name="title_section3">Pair</string>
+    <string name="navigation_drawer_open">Open</string>
+    <string name="navigation_drawer_close">Close</string>
+    <string name="action_search">Search</string>
     <string name="action_settings">Settings</string>
+
+    <string-array name="nav_drawer_items">
+        <item>Dashboard</item>
+        <item>Devices</item>
+        <item>Pair</item>
+        <item>Debug</item>
+    </string-array>
+
+    <array name="nav_drawer_icons">
+        <item>@drawable/ic_dashboard</item>
+        <item>@drawable/ic_devices</item>
+        <item>@drawable/ic_pair</item>
+        <item>@drawable/ic_debug</item>
+    </array>
+
+    <string name="desc_list_item_icon">Icon</string>
 
 </resources>

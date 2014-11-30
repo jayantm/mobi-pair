@@ -1,0 +1,78 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingBottom="@dimen/activity_vertical_margin"
+    android:paddingLeft="@dimen/activity_horizontal_margin"
+    android:paddingRight="@dimen/activity_horizontal_margin"
+    android:paddingTop="@dimen/activity_vertical_margin"
+    tools:context="com.orbiworks.mobipair.MainActivity$PlaceholderFragment" >
+
+    <TextView
+        android:id="@+id/lblDevToken"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginLeft="10dp"
+        android:layout_marginTop="50dp"
+        android:text="Device Token: "
+        android:textAppearance="?android:attr/textAppearanceLarge" />
+
+    <TextView
+        android:id="@+id/txtDevToken"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBottom="@+id/lblDevToken"
+        android:layout_marginLeft="10dp"
+        android:layout_toRightOf="@+id/lblDevToken"
+        android:text="843489"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:textStyle="bold"
+        android:typeface="monospace" />
+
+    <TextView
+        android:id="@+id/lblPairToken"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/lblDevToken"
+        android:layout_below="@+id/lblDevToken"
+        android:layout_marginTop="50dp"
+        android:text="Pairing Token: "
+        android:textAppearance="?android:attr/textAppearanceLarge" />
+
+    <EditText
+        android:id="@+id/txtPairToken"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBaseline="@+id/lblPairToken"
+        android:layout_alignBottom="@+id/lblPairToken"
+        android:layout_alignLeft="@+id/txtDevToken"
+        android:ems="10"
+        android:textStyle="bold"
+        android:typeface="monospace" >
+
+        <requestFocus />
+    </EditText>
+
+    <TextView
+        android:id="@+id/lblTokenHelp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/lblPairToken"
+        android:layout_below="@+id/txtPairToken"
+        android:layout_marginTop="8dp"
+        android:text="You need to get this token from other device"
+        android:textAppearance="?android:attr/textAppearanceSmall" />
+
+    <Button
+        android:id="@+id/btnRequestPair"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignLeft="@+id/lblPairToken"
+        android:layout_alignRight="@+id/txtPairToken"
+        android:layout_below="@+id/lblTokenHelp"
+        android:layout_marginTop="120dp"
+        android:text="Send Pairing Request" />
+
+</RelativeLayout>
