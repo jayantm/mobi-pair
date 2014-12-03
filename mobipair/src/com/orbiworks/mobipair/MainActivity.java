@@ -39,6 +39,8 @@ public class MainActivity extends ActionBarActivity
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		
+		registerApp();
+		
 		mApplication = (MobiPairApp)getApplicationContext();
 
 		navMenuTitles = getResources().getStringArray(R.array.nav_drawer_items);
@@ -78,6 +80,18 @@ public class MainActivity extends ActionBarActivity
 
 		DrawerLayout drwrLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
 		mNavigationDrawerFragment.setUp(R.id.navigation_drawer, drwrLayout);
+	}
+	
+	public void registerApp() {
+		PendingIntent pIntent = PendingIntent.getBroadcast(this, 0, new Intent(), 0);
+		Intent regIntent = new Intent("com.google.android.c2dm.intent.REGISTER");
+		regIntent.putExtra("app", pIntent);
+		regIntent.putExtra("sender", "644434484811");
+		try {
+			startService(regIntent);
+		} catch (Exception e) {
+			Log.e("REC", e.getMessage());
+		}
 	}
 	
 	@Override
