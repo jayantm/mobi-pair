@@ -1,0 +1,41 @@
+http://techobyte.com/mobipair/devices
+[{
+	"id": "3",
+	"dev_id": "1234jl23i423o",
+	"dev_date": "2014-11-16 18:45:31",
+	"dev_title": "Testing",
+	"dev_email": "noreply@mobiworks.com",
+	"dev_token": "792956"
+},
+{
+	"id": "2",
+	"dev_id": "3DF0DD201C071CB1",
+	"dev_date": "2014-11-16 16:44:53",
+	"dev_title": "Mirang",
+	"dev_email": "mirang@gmail.com",
+	"dev_token": "42283"
+},
+{
+	"id": "1",
+	"dev_id": "34A1194E0125664B",
+	"dev_date": "2014-11-16 16:44:25",
+	"dev_title": "Jayant",
+	"dev_email": "mukherjeejayant@gmail.com",
+	"dev_token": "93595"
+}]
+
+
+     Mirang
+       /\
+     |/  \|
+Testing  Jayant
+
+http://techobyte.com/mobipair/pairs?id=3DF0DD201C071CB1
+[{
+	"dev_title": "Testing",
+	"pair_date": "2014-11-16 18:45:09"
+},
+{
+	"dev_title": "Jayant",
+	"pair_date": "2014-11-16 18:06:42"
+}]

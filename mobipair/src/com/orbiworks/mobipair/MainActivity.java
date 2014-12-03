@@ -1,8 +1,16 @@
 package com.orbiworks.mobipair;
 
-import com.orbiworks.mobipair.navdrawer.NavDrawerFragment;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
 
+import com.orbiworks.mobipair.navdrawer.NavDrawerFragment;
+import com.orbiworks.mobipair.util.HttpTask;
+
+import android.accounts.Account;
+import android.accounts.AccountManager;
 import android.app.PendingIntent;
+import android.app.ProgressDialog;
 import android.content.Intent;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.ActionBar;
@@ -16,37 +24,90 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.support.v4.widget.DrawerLayout;
 
-public class MainActivity extends ActionBarActivity implements
-		NavDrawerFragment.NavigationDrawerCallbacks {
-
-	/**
-	 * Fragment managing the behaviors, interactions and presentation of the
-	 * navigation drawer.
-	 */
+public class MainActivity extends ActionBarActivity
+	implements NavDrawerFragment.NavigationDrawerCallbacks, HttpTask.HttpTaskHandler
+{	
+	private ProgressDialog nDialog;
+	private String data;
 	private NavDrawerFragment mNavigationDrawerFragment;
-
-	/**
-	 * Used to store the last screen title. For use in
-	 * {@link #restoreActionBar()}.
-	 */
 	private CharSequence mTitle;
 	private String[] navMenuTitles;
+	private MobiPairApp mApplication = null;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
+		
+		mApplication = (MobiPairApp)getApplicationContext();
 
 		navMenuTitles = getResources().getStringArray(R.array.nav_drawer_items);
 
 		FragmentManager fragMngr = getSupportFragmentManager();
+		
+		Account[] accounts = AccountManager.get(this).getAccounts();
+		Log.e("", "Size: " + accounts.length);
+		for (Account account : accounts) {
+
+			String possibleEmail = account.name;
+			String type = account.type;
+
+			if (type.equals("com.google")) {
+				mApplication.device.setAccountMail(possibleEmail);
+				Log.i("Account", possibleEmail);
+				break;
+			}
+		}
 
 		mNavigationDrawerFragment = (NavDrawerFragment) fragMngr.findFragmentById(R.id.navigation_drawer);
 		mTitle = getTitle();
 		showNotification();
+		
+		nDialog = new ProgressDialog(this);
+		nDialog.setMessage("Fetching..");
+		nDialog.setTitle("Getting data");
+		nDialog.setIndeterminate(false);
+		nDialog.setCancelable(true);
+		
+		String deviceId = mApplication.device.getDeviceId();
+		Log.i("DeviceID", deviceId);
+
+		HttpTask task = new HttpTask();
+		task.setTaskHandler(this);
+		task.execute(HttpTask.GET("/devices?id="+deviceId));
 
 		DrawerLayout drwrLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
 		mNavigationDrawerFragment.setUp(R.id.navigation_drawer, drwrLayout);
+	}
+	
+	@Override
+	public void httpTaskBegin(String tag) {
+		Log.d(tag, "Begin");
+		nDialog.show();
+	}
+	
+	@Override
+	public void httpTaskSuccess(String tag, String json) {
+		data = json;
+		Log.d(tag, data);
+		nDialog.dismiss();
+		
+		JSONArray arrJson = null;
+		JSONObject obj = null;
+		try {
+			arrJson = new JSONArray(json);
+			obj = arrJson.getJSONObject(0);
+			mApplication.device.setDeviceToken(obj.getString("dev_token"));
+		} catch (JSONException e) {
+			Log.e(tag, e.getMessage());
+		}
+	}
+
+	@Override
+	public void httpTaskFail(String tag) {
+		Log.e(tag, "Task Failed");
+		data = null;
+		nDialog.dismiss();
 	}
 
 	private void showNotification() {
@@ -57,16 +118,14 @@ public class MainActivity extends ActionBarActivity implements
 		intentAccept.putExtra("action_type", "app_notification");
 		intentAccept.putExtra("notificationId", notificationId);
 		PendingIntent pIntentAccept = PendingIntent.getBroadcast(
-				getBaseContext(), 12345, intentAccept,
-				PendingIntent.FLAG_UPDATE_CURRENT);
+				getBaseContext(), 12345, intentAccept, PendingIntent.FLAG_UPDATE_CURRENT);
 
 		Intent intentReject = new Intent(getBaseContext(), MobiPairBroadcastReceiver.class);
 		intentReject.setAction("Reject");
 		intentReject.putExtra("action_type", "app_notification");
 		intentReject.putExtra("notificationId", notificationId);
 		PendingIntent pIntentReject = PendingIntent.getBroadcast(
-				getBaseContext(), 12345, intentReject,
-				PendingIntent.FLAG_UPDATE_CURRENT);
+				getBaseContext(), 12345, intentReject, PendingIntent.FLAG_UPDATE_CURRENT);
 
 		NotificationCompat.Builder noti = new NotificationCompat.Builder(getBaseContext())
 				.setAutoCancel(true)
@@ -100,6 +159,12 @@ public class MainActivity extends ActionBarActivity implements
 		Fragment fragment = null;
 
 		switch (position) {
+		case 0:
+			fragment = new DashboardFragment();
+			break;
+		case 1:
+			fragment = new DevicesFragment();
+			break;
 		case 2:
 			fragment = new PairFragment();
 			break;

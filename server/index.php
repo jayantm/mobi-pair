@@ -12,8 +12,11 @@ class Devices {
         }
         
         $res = $db->query($sql);
-        $arrDevices = $res->fetchAll(PDO::FETCH_ASSOC);
-        return $arrDevices;
+        if($res != false) {
+            $arrDevices = $res->fetchAll(PDO::FETCH_ASSOC);
+            return $arrDevices;
+        }
+        return $res;
     }
     
     public static function generateToken(&$db) {
@@ -26,17 +29,20 @@ class Devices {
         return $row['token'];
     }
     
-    public static function addDevice(&$db, $id) {
-        $res = getDevices($db, $id);
+    public static function addDevice(&$db, $id, $gcmId, $title, $email) {
+        $res = self::getDevices($db, $id);
         if($res == false) {
             $token = self::generateToken($db);
-            $sql = "INSERT INTO `devices` (dev_id,dev_date,dev_token) VALUES (:id,NOW(),:token)";
+            $sql = "INSERT INTO `devices` (dev_id,dev_date,dev_token,dev_title,dev_email) VALUES (:id,NOW(),:token,:title,:email)";
             $q = $db->prepare($sql);
-            $q->execute(array(':id'=>$id,':token'=>$token));
-            $temp = $q->fetch(PDO::FETCH_ASSOC);
-            print_r($temp);
-            print $dbh->lastInsertId();
-            $res = getDevices($db, $id);
+            $q->execute(array(':id'=>$id,':token'=>$token, ':title'=>$title, ':email'=>$email));
+            $dbId = $db->lastInsertId();
+            if($dbId) {
+                $sql = "INSERT INTO `notify_gcm` (dev_id,reg_id) VALUES (:id,:gcmId)";
+                $q = $db->prepare($sql);
+                $q->execute(array(':id'=>$dbId,':gcmId'=>$gcmId));
+            }
+            $res = self::getDevices($db, $id);
         }
         return $res;
     }
@@ -50,14 +56,14 @@ class Devices {
 
 class PairedDevices {
     public static function getPairedDeviceInfo(&$db, $forId) {
-        $sql = "SELECT dv.dev_title,dp.pair_date
+        $sql = "SELECT dv.dev_title,dp.pair_date,dp.status
                   FROM `devices_pair` AS dp
                   INNER JOIN `devices` AS dv ON dv.id=dp.dev_id_2
                   WHERE dp.dev_id_1 IN (SELECT dv1.id FROM `devices` AS dv1 WHERE dev_id='$forId')";
         $res = $db->query($sql);
         $dev1All = $res->fetchAll(PDO::FETCH_ASSOC);
         
-        $sql = "SELECT dv.dev_title,dp.pair_date
+        $sql = "SELECT dv.dev_title,dp.pair_date,dp.status
                   FROM `devices_pair` AS dp
                   INNER JOIN `devices` AS dv ON dv.id=dp.dev_id_1
                   WHERE dp.dev_id_2 IN (SELECT dv1.id FROM `devices` AS dv1 WHERE dev_id='$forId')";
@@ -188,11 +194,15 @@ Flight::route('POST /devices', function(){
     $db = Flight::db(false);
     $id = Flight::request()->query['id'];
     $gcmId = Flight::request()->query['gcmId'];
+    $title = Flight::request()->query['title'];
+    $email = Flight::request()->query['email'];
     if(empty($id)) {
         $str = Flight::request()->getBody();
         parse_str($str, $output);
         $id = $output['id'];
         $gcmId = $output['gcmId'];
+        $title = $output['title'];
+        $email = $output['email'];
     }
     if(empty($id)) {
         echo "Error: no Id";
@@ -202,7 +212,8 @@ Flight::route('POST /devices', function(){
         echo "Error: provide GCM Id";
         return;
     }
-    echo Devices::addDevice($db, $id, $gcmId);
+    $arr = Devices::addDevice($db, $id, $gcmId, $title, $email);
+    print(json_encode($arr));
 });
 
 Flight::route('PUT /devices', function(){

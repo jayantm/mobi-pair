@@ -1,5 +1,8 @@
 package com.orbiworks.mobipair;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -14,29 +17,35 @@ import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
+import android.widget.ListView;
 import android.widget.TextView;
 
-public class DebugFragment extends Fragment
+public class DevicesFragment extends Fragment
 	implements HttpTask.HttpTaskHandler
 {
 	private ProgressDialog nDialog = null;
-	private TextView tvDbgView = null;
+	private ListView listView = null;
+	private MobiPairApp mApplication = null;
 	
-	public static DebugFragment newInstance(int sectionNumber) {
-		DebugFragment fragment = new DebugFragment();
+	public static DevicesFragment newInstance(int sectionNumber) {
+		DevicesFragment fragment = new DevicesFragment();
 		Bundle args = new Bundle();
 		args.putInt("ARG_SECTION_NUMBER", sectionNumber);
 		fragment.setArguments(args);
 		return fragment;
 	}
 
-	public DebugFragment() {
+	public DevicesFragment() {
 		
 	}
 
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-		View rootView = inflater.inflate(R.layout.fragment_debug, container, false);
+		View rootView = inflater.inflate(R.layout.fragment_devices, container, false);
+		
+		mApplication = (MobiPairApp)getActivity().getApplicationContext();
+		
 		nDialog = new ProgressDialog(getActivity());
 		nDialog.setMessage("Fetching..");
 		nDialog.setTitle("Getting data");
@@ -45,8 +54,8 @@ public class DebugFragment extends Fragment
 		
 		getPairedDevices();
 		
-		tvDbgView=(TextView) rootView.findViewById(R.id.txt_debug);
-		
+		listView = (ListView) rootView.findViewById(R.id.lst_paired_devices);
+
 		return rootView;
 	}
 	
@@ -66,26 +75,39 @@ public class DebugFragment extends Fragment
 		nDialog.show();
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public void httpTaskSuccess(String tag, String json) {
 		JSONArray arrJson = null;
-		String dbgString = "";
+		String dbgString = json;
+		final List<String> values = new ArrayList<String>();
 		if(json != null) {
 			try {
 				arrJson = new JSONArray(json);
 				for(int i=0; i<arrJson.length(); i++) {
 					JSONObject obj = arrJson.getJSONObject(i);
-					dbgString += obj.getString("dev_title");
-					dbgString += "\n";
+					values.add(obj.getString("dev_title") + "," + obj.getString("status"));
 				}
-				Log.i("DebugFragment", String.valueOf(arrJson.length()));
 			} catch (JSONException e) {
 				Log.e("DebugFragment", e.getMessage());
 			}
 		}
-		dbgString += "\n";
-		dbgString += json;
-		tvDbgView.setText(dbgString);
+		ArrayAdapter adapter = null;
+		
+		adapter = new ArrayAdapter(this.getActivity(), android.R.layout.simple_list_item_2, android.R.id.text1, values) {
+			@Override
+			public View getView(int position, View convertView, ViewGroup parent) {
+				View view = super.getView(position, convertView, parent);
+				TextView text1 = (TextView) view.findViewById(android.R.id.text1);
+				TextView text2 = (TextView) view.findViewById(android.R.id.text2);
+				String data = values.get(position);
+				text1.setText(data.substring(0, data.indexOf(",", 0)));
+				text2.setText(data.substring(data.indexOf(",", 0)+1));
+
+				return view;
+			}
+		};
+		listView.setAdapter(adapter); 
 		Log.i(tag, dbgString);
 		nDialog.dismiss();
 	}

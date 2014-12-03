@@ -8,12 +8,10 @@
     android:paddingTop="@dimen/activity_vertical_margin"
     tools:context="com.orbiworks.mobipair.MainActivity$PlaceholderFragment" >
 
-    <TextView
-        android:id="@+id/txt_debug"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:maxLines="50"
-        android:scrollbars="vertical"
-        android:text="Debug" />
+    <ListView
+        android:id="@+id/lst_paired_devices"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content" >
+    </ListView>
 
 </RelativeLayout>
