@@ -1,6 +1,8 @@
 <?php
 require 'flight/Flight.php';
 
+Flight::set('flight.log_errors', true);
+
 Flight::register('db', 'PDO', array('mysql:host=localhost;dbname=techobyt_mobipair','techobyt_mp','M0b!P@!r'));
 
 class Devices {
@@ -47,10 +49,10 @@ class Devices {
         return $res;
     }
     
-    public static function updateDevice(&$db, $id, $title) {
-        $sql = "UPDATE `devices` SET dev_title=? WHERE id=?";
+    public static function updateDevice(&$db, $id, $gcmId, $title, $email) {
+        $sql = "UPDATE `devices` SET dev_title=:title,dev_email=:email WHERE id=:id";
         $q = $db->prepare($sql);
-        $q->execute(array($title,$id));
+        $q->execute(array(':id'=>$id,':token'=>$token, ':title'=>$title, ':email'=>$email));
     }
 }
 
@@ -104,19 +106,22 @@ class PairedDevices {
         $res = "";
         $sql = "SELECT *
                   FROM `devices_pair`
-                  WHERE dev_id_1 IN (SELECT id FROM `devices` WHERE dev_token='$token1')
-                    AND dev_id_2 IN (SELECT id FROM `devices` WHERE dev_token='$token2')";
+                  WHERE (dev_id_1 IN (SELECT id FROM `devices` WHERE dev_token='$token1') AND dev_id_2 IN (SELECT id FROM `devices` WHERE dev_token='$token2'))
+                     OR (dev_id_1 IN (SELECT id FROM `devices` WHERE dev_token='$token2') AND dev_id_2 IN (SELECT id FROM `devices` WHERE dev_token='$token1'))";
         $res = $db->query($sql);
         $pair = $res->fetch(PDO::FETCH_ASSOC);
         if($pair==false) {
             $sql = "INSERT INTO `devices_pair` (dev_id_1,dev_id_2,pair_date)
-                    VALUES ((SELECT id FROM `devices` WHERE dev_token=':token1'),(SELECT id FROM `devices` WHERE dev_token=':token2'),NOW())";
+                    VALUES ((SELECT id FROM `devices` WHERE dev_token='$token1'),(SELECT id FROM `devices` WHERE dev_token='$token2'),NOW())";
+            //echo $sql;
             $q = $db->prepare($sql);
-            
             if($q == false) { 
                 throw new Exception(print_r($db->errorInfo(),1).PHP_EOL.$sql);
             }
-            $res = $q->execute(array(':token1'=>$token1,':token2'=>$token2));
+            $q->bindParam(':token1',$token1);
+            $q->bindParam(':token2',$token2);
+            $res = $q->execute();
+            
             if($res == false) {
                 throw new Exception(print_r($db->errorInfo(),1).PHP_EOL.$sql);
             }
@@ -218,23 +223,23 @@ Flight::route('POST /devices', function(){
 
 Flight::route('PUT /devices', function(){
     $db = Flight::db(false);
-    $id = Flight::request()->query['id'];
+   $id = Flight::request()->query['id'];
+    $gcmId = Flight::request()->query['gcmId'];
     $title = Flight::request()->query['title'];
+    $email = Flight::request()->query['email'];
     if(empty($id)) {
         $str = Flight::request()->getBody();
         parse_str($str, $output);
         $id = $output['id'];
-        $id = $output['title'];
+        $gcmId = $output['gcmId'];
+        $title = $output['title'];
+        $email = $output['email'];
     }
     if(empty($id)) {
         echo "Error: no Id";
         return;
     }
-    if(empty($title)) {
-        echo "Error: no Title";
-        return;
-    }
-    Devices::updateDevice($db, $id, $title);
+    Devices::updateDevice($db, $id, $gcmId, $title, $email);
 });
 
 /********************************************************/
