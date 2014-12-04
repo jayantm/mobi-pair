@@ -10,6 +10,10 @@ public class Device {
 	private String accountMail;
 	private String deviceToken;
 	private String deviceTitle;
+
+	public Device(Context cntxt) {
+		deviceId = DeviceUtil.getDeviceId(cntxt);
+	}
 	
 	public String getDeviceId() {
 		return deviceId;
@@ -31,10 +35,6 @@ public class Device {
 		return accountMail;
 	}
 	
-	public Device(Context cntxt) {
-		deviceId = DeviceUtil.getDeviceId(cntxt);
-	}
-
 	public void setAccountMail(String accountMail) {
 		this.accountMail = accountMail;
 	}

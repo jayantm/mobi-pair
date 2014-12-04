@@ -6,12 +6,17 @@ import org.json.JSONObject;
 
 import com.orbiworks.mobipair.navdrawer.NavDrawerFragment;
 import com.orbiworks.mobipair.util.HttpTask;
+import com.orbiworks.mobipair.util.HttpTask.HttpTaskHandler;
 
 import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.app.PendingIntent;
 import android.app.ProgressDialog;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.SharedPreferences;
 import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.ActionBar;
 import android.support.v4.app.Fragment;
@@ -33,43 +38,27 @@ public class MainActivity extends ActionBarActivity
 	private CharSequence mTitle;
 	private String[] navMenuTitles;
 	private MobiPairApp mApplication = null;
+	private static HttpTaskHandler htHandler = null;
+	private SharedPreferences sharedPrefs = null;
+	
+	private BroadcastReceiver gcmRegReceiver = null;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		
-		registerApp();
+		init();
 		
-		mApplication = (MobiPairApp)getApplicationContext();
-
+		populateModel();
+		
 		navMenuTitles = getResources().getStringArray(R.array.nav_drawer_items);
 
 		FragmentManager fragMngr = getSupportFragmentManager();
 		
-		Account[] accounts = AccountManager.get(this).getAccounts();
-		Log.e("", "Size: " + accounts.length);
-		for (Account account : accounts) {
-
-			String possibleEmail = account.name;
-			String type = account.type;
-
-			if (type.equals("com.google")) {
-				mApplication.device.setAccountMail(possibleEmail);
-				Log.i("Account", possibleEmail);
-				break;
-			}
-		}
-
 		mNavigationDrawerFragment = (NavDrawerFragment) fragMngr.findFragmentById(R.id.navigation_drawer);
 		mTitle = getTitle();
 		showNotification();
-		
-		nDialog = new ProgressDialog(this);
-		nDialog.setMessage("Fetching..");
-		nDialog.setTitle("Getting data");
-		nDialog.setIndeterminate(false);
-		nDialog.setCancelable(true);
 		
 		String deviceId = mApplication.device.getDeviceId();
 		Log.i("DeviceID", deviceId);
@@ -82,8 +71,118 @@ public class MainActivity extends ActionBarActivity
 		mNavigationDrawerFragment.setUp(R.id.navigation_drawer, drwrLayout);
 	}
 	
+	@Override
+	protected void onResume() {
+		super.onResume();
+		
+		if (sharedPrefs.getBoolean("firstrun", true)) {
+			sharedPrefs.edit().putBoolean("firstrun", false).commit();
+		}
+	}
+
+	@Override
+	protected void onPause() {
+		super.onPause();
+	}
+	
+	@Override
+	protected void onDestroy() {
+		unregisterReceiver(gcmRegReceiver);
+		super.onDestroy();
+	}
+	
+	private void init() {
+		mApplication = (MobiPairApp)getApplicationContext();
+		sharedPrefs = getSharedPreferences("com.orbiworks.mobipair", Context.MODE_PRIVATE);
+		MobiPairApp.setContext(this);
+		htHandler = this;
+		
+		nDialog = new ProgressDialog(this);
+		nDialog.setMessage("Fetching..");
+		nDialog.setTitle("Getting data");
+		nDialog.setIndeterminate(false);
+		nDialog.setCancelable(true);
+		
+		gcmRegReceiver = new BroadcastReceiver() {
+			@Override
+			public void onReceive(Context context, Intent intent) {
+				String action = intent.getAction();
+				if (action.equals("com.orbiworks.mobipair.GCM_REG")) {
+					String gcmId = intent.getStringExtra("gcmId");
+					sharedPrefs.edit().putString("gcmId", gcmId);
+					sharedPrefs.edit().commit();
+					HttpTask task = new HttpTask();
+					if(MainActivity.htHandler != null) {
+						task.setTaskHandler(MainActivity.htHandler);
+					} else {
+						task.setTaskHandler(new HttpTaskHandler() {
+							@Override
+							public void httpTaskSuccess(String tag, String json) {
+								Log.d(tag, json);
+								JSONArray arrJson = null;
+								JSONObject obj = null;
+								try {
+									arrJson = new JSONArray(json);
+									if(arrJson.length()>0) {
+										obj = arrJson.getJSONObject(0);
+										mApplication.device.setDeviceToken(obj.getString("dev_token"));
+									}
+								} catch (JSONException e) {
+									Log.e(tag, e.getMessage());
+								}
+							}
+							@Override
+							public void httpTaskFail(String tag) {
+								Log.e(tag, "register fail");
+							}
+							@Override
+							public void httpTaskBegin(String tag) {
+								Log.i(tag, "register begins");
+							}
+						});
+					}
+					
+					String qryString = String.format("id=%s&gcmId=%s&title=%s&email=%s",
+											mApplication.device.getDeviceId(),
+											mApplication.device.getGcmId(),
+											mApplication.device.getDeviceTitle(),
+											mApplication.device.getAccountMail());
+					Log.d("MainActivity", qryString);
+					task.execute(HttpTask.POST("/devices?"+qryString));
+				}
+			}
+		};
+		
+		IntentFilter filter = new IntentFilter();
+		filter.addAction("com.orbiworks.mobipair.GCM_REG");
+		registerReceiver(gcmRegReceiver, filter);
+	}
+	
+	private void populateModel() {
+		Account[] accounts = AccountManager.get(this).getAccounts();
+		for (Account account : accounts) {
+
+			String possibleEmail = account.name;
+			String type = account.type;
+
+			if (type.equals("com.google")) {
+				mApplication.device.setAccountMail(possibleEmail);
+				mApplication.device.setDeviceTitle(possibleEmail.substring(0, possibleEmail.indexOf("@")));
+				Log.i("Account", possibleEmail);
+				break;
+			}
+		}
+		
+		String gcmId = sharedPrefs.getString("gcmId", "");
+		if(sharedPrefs.getBoolean("firstrun", true)==false && gcmId != null && gcmId.length()>0) {
+			mApplication.device.setGcmId(gcmId);
+		} else {
+			registerApp();
+		}
+	}
+	
 	public void registerApp() {
-		PendingIntent pIntent = PendingIntent.getBroadcast(this, 0, new Intent(), 0);
+		PendingIntent pIntent = PendingIntent.getBroadcast(this.getApplicationContext(), 0, new Intent(), 0);
 		Intent regIntent = new Intent("com.google.android.c2dm.intent.REGISTER");
 		regIntent.putExtra("app", pIntent);
 		regIntent.putExtra("sender", "644434484811");
@@ -110,8 +209,10 @@ public class MainActivity extends ActionBarActivity
 		JSONObject obj = null;
 		try {
 			arrJson = new JSONArray(json);
-			obj = arrJson.getJSONObject(0);
-			mApplication.device.setDeviceToken(obj.getString("dev_token"));
+			if(arrJson.length()>0) {
+				obj = arrJson.getJSONObject(0);
+				mApplication.device.setDeviceToken(obj.getString("dev_token"));
+			}
 		} catch (JSONException e) {
 			Log.e(tag, e.getMessage());
 		}
@@ -126,6 +227,12 @@ public class MainActivity extends ActionBarActivity
 
 	private void showNotification() {
 		final int notificationId = 1;
+		
+		Intent intentApp = new Intent(getBaseContext(), MainActivity.class);
+		intentApp.setAction("Dashboard");
+		intentApp.putExtra("action_type", "app_notification");
+		intentApp.putExtra("notificationId", notificationId);
+		PendingIntent pIntentApp = PendingIntent.getActivity(getApplicationContext(), 0, intentApp, PendingIntent.FLAG_UPDATE_CURRENT);
 
 		Intent intentAccept = new Intent(getBaseContext(), MobiPairBroadcastReceiver.class);
 		intentAccept.setAction("Accept");
@@ -142,14 +249,17 @@ public class MainActivity extends ActionBarActivity
 				getBaseContext(), 12345, intentReject, PendingIntent.FLAG_UPDATE_CURRENT);
 
 		NotificationCompat.Builder noti = new NotificationCompat.Builder(getBaseContext())
-				.setAutoCancel(true)
-				.setSmallIcon(R.drawable.ic_launcher)
-				.setContentTitle("New Pairing Request")
-				.setContentText("   from longmailid_reallylonglonglongid@gmail.com")
-				.addAction(R.drawable.ic_accept, "Accept", pIntentAccept)
-				.setContentIntent(pIntentAccept)
-				.addAction(R.drawable.ic_reject, "Reject", pIntentReject)
-				.setContentIntent(pIntentReject);
+			.setSubText("New Pairing Request Sub")
+			.setTicker("New Pairing Request Ticker")
+			.setAutoCancel(true)
+			.setSmallIcon(R.drawable.ic_launcher)
+			.setContentTitle("New Pairing Request")
+			.setContentText("   from longmailid_reallylonglonglongid@gmail.com")
+			.setContentIntent(pIntentApp)
+			.addAction(R.drawable.ic_accept, "Accept", pIntentAccept)
+			.addAction(R.drawable.ic_reject, "Reject", pIntentReject);
+			//.setContentIntent(pIntentAccept)
+			//.setContentIntent(pIntentReject);
 
 		NotificationManagerCompat notificationManager = NotificationManagerCompat.from(this);
 		notificationManager.notify(notificationId, noti.build());
@@ -173,21 +283,21 @@ public class MainActivity extends ActionBarActivity
 		Fragment fragment = null;
 
 		switch (position) {
-		case 0:
-			fragment = new DashboardFragment();
-			break;
-		case 1:
-			fragment = new DevicesFragment();
-			break;
-		case 2:
-			fragment = new PairFragment();
-			break;
-		case 3:
-			fragment = new DebugFragment();
-			break;
-		default:
-			fragment = new DashboardFragment();
-			break;
+			case 0:
+				fragment = new DashboardFragment();
+				break;
+			case 1:
+				fragment = new DevicesFragment();
+				break;
+			case 2:
+				fragment = new PairFragment();
+				break;
+			case 3:
+				fragment = new DebugFragment();
+				break;
+			default:
+				fragment = new DashboardFragment();
+				break;
 		}
 
 		if (fragment != null) {

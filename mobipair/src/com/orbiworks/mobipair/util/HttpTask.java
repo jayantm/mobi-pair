@@ -3,6 +3,8 @@ package com.orbiworks.mobipair.util;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.util.EntityUtils;
@@ -19,7 +21,21 @@ public class HttpTask extends AsyncTask<HttpUriRequest, Void, String> {
 	private HttpTaskHandler taskHandler;
 	
 	public static HttpGet GET(String path) {
-		return new HttpGet(HOST + path);
+		String url = HOST + path;
+		Log.d("HttpTask-GET", url);
+		return new HttpGet(url);
+	}
+	
+	public static HttpPost POST(String path) {
+		String url = HOST + path;
+		Log.d("HttpTask-POST", url);
+		return new HttpPost(url);
+	}
+	
+	public static HttpPut PUT(String path) {
+		String url = HOST + path;
+		Log.d("HttpTask-PUT", url);
+		return new HttpPut(url);
 	}
 
 	public void setTaskHandler(HttpTaskHandler taskHandler) {
@@ -31,7 +47,7 @@ public class HttpTask extends AsyncTask<HttpUriRequest, Void, String> {
 	protected String doInBackground(HttpUriRequest... params) {
 		HttpUriRequest request = params[0];
 		HttpClient client = new DefaultHttpClient();
-		resource = request.getURI().getPath();
+		resource = request.getMethod() + " " + request.getURI().getPath();
 
 		try {
 			HttpResponse response = client.execute(request);

@@ -51,6 +51,15 @@
                 <category android:name="com.orbiworks.mobipair" />
             </intent-filter>
         </receiver>
+        
+        <!-- <receiver
+            android:name=".MainActivity" >
+            <intent-filter>
+                <action android:name="com.orbiworks.mobipair.GCM_REG" />
+
+                <category android:name="com.orbiworks.mobipair" />
+            </intent-filter>
+        </receiver> -->
 
         <service
             android:name=".NotificationListenerService"

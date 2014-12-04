@@ -48,6 +48,7 @@
         android:layout_alignBaseline="@+id/lblPairToken"
         android:layout_alignBottom="@+id/lblPairToken"
         android:layout_alignLeft="@+id/txtDevToken"
+        android:inputType="number"
         android:ems="10"
         android:textStyle="bold"
         android:typeface="monospace" >

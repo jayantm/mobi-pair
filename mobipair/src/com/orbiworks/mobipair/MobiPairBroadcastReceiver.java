@@ -33,10 +33,8 @@ public class MobiPairBroadcastReceiver extends BroadcastReceiver {
 					String registrationId = intent.getStringExtra("registration_id");
 					mApplication.device.setGcmId(registrationId);
 					Log.i("MobiPairBroadcastReceiver", registrationId);
-					String error = intent.getStringExtra("error");
-					String unregistered = intent.getStringExtra("unregistered");
-					Intent i = new Intent("com.orbiworks.mobipair.NOTIFICATION_LISTENER_EXAMPLE");
-					i.putExtra("applicationid", registrationId);
+					Intent i = new Intent("com.orbiworks.mobipair.GCM_REG");
+					i.putExtra("gcmId", registrationId);
 					context.sendBroadcast(i);
 				} else if (action.equals("com.google.android.c2dm.intent.RECEIVE")) {
 					// string dataS
@@ -44,7 +42,7 @@ public class MobiPairBroadcastReceiver extends BroadcastReceiver {
 					Log.i("MobiPairBroadcastReceiver", data);
 					Intent i = new Intent("com.orbiworks.mobipair.NOTIFICATION_LISTENER_EXAMPLE");
 					i.putExtra("message", "From GCM : " + data);
-					context.sendBroadcast(i);
+					MobiPairApp.getContext().sendBroadcast(i);
 				} else {
 					Log.i("MobiPairBroadcastReceiver", action);
 				}
