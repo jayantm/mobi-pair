@@ -1,13 +1,8 @@
 package com.orbiworks.mobipair;
 
 import java.lang.reflect.Field;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-
 import android.accessibilityservice.AccessibilityService;
 import android.accessibilityservice.AccessibilityServiceInfo;
 import android.annotation.SuppressLint;
@@ -19,7 +14,6 @@ import android.support.v4.content.LocalBroadcastManager;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
-import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.RemoteViews;
 
 public class NotificationListenerService extends AccessibilityService {
@@ -28,7 +22,7 @@ public class NotificationListenerService extends AccessibilityService {
 	public void onAccessibilityEvent(AccessibilityEvent event) {
 		Log.d("Reciever", "onAccessibilityEvent");
 		if (event.getEventType() == AccessibilityEvent.TYPE_NOTIFICATION_STATE_CHANGED) {
-			Notification notification = (Notification) event.getParcelableData();
+ 			Notification notification = (Notification) event.getParcelableData();
 			List<String> lstNoti = getNotiText(notification);
 			Log.d("Noti", lstNoti.toString());
 			
@@ -42,6 +36,9 @@ public class NotificationListenerService extends AccessibilityService {
 					msg = msg.replace(", ", ": ");
 				} else {
 					msg = msg.replace(", ", "\n");
+				}
+				if(packagename.equals("com.android.phone")) {
+					msg = event.getText().toString();
 				}
 				intent.putExtra("msg", msg);
 				LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
@@ -90,7 +87,7 @@ public class NotificationListenerService extends AccessibilityService {
 
 				// Save strings
 				else if (methodName.equals("setText")) {
-					// Parameter type (10 = Character Sequence)
+					// Parameter type (10 = Character Sequence) 
 					parcel.readInt();
 
 					// Store the actual string
