@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="wrap_content"
+    android:padding="10dp" >
+    
+    <ImageView
+        android:id="@+id/app_icon"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/ic_drawer"
+        android:contentDescription="@string/app_name"
+        android:layout_alignParentLeft="true"
+        android:paddingLeft="25dp"/>
+
+    <TextView
+        android:id="@+id/app_name"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignTop="@+id/app_icon"
+        android:layout_toRightOf="@+id/app_icon"
+        android:paddingLeft="15dp"
+        android:text="Missed Calls" />
+    
+    <TextView
+        android:id="@+id/noti_count"
+        android:layout_width="20dp"
+        android:layout_height="wrap_content"
+        android:layout_alignTop="@+id/app_icon"
+        android:layout_toRightOf="@+id/app_name"
+        android:paddingLeft="15dp"
+        android:paddingRight="25dp"
+        android:layout_alignParentRight="true"
+        android:text="88" />
+
+</RelativeLayout>

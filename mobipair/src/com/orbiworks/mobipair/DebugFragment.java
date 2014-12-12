@@ -7,9 +7,15 @@ import org.json.JSONObject;
 import com.orbiworks.mobipair.util.HttpTask;
 
 import android.support.v4.app.Fragment;
+import android.support.v4.content.LocalBroadcastManager;
+import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
 import android.app.Activity;
 import android.app.ProgressDialog;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -21,6 +27,26 @@ public class DebugFragment extends Fragment
 {
 	private ProgressDialog nDialog = null;
 	private TextView tvDbgView = null;
+	private String lstMissedCalls = "";
+	private String lstWhatsapp = "";
+	private String lstOthers = "";
+	
+	private BroadcastReceiver mMessageReceiver = new BroadcastReceiver() {
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			String action = intent.getAction();
+			String pkg = intent.getStringExtra("pkg");
+			String msg = intent.getStringExtra("msg");
+			if(pkg.equals("com.android.phone")) {
+				lstMissedCalls = msg + "\n\n" + lstMissedCalls;
+			} else if(pkg.equals("com.whatsapp")) {
+				lstWhatsapp = msg;
+			} else {
+				lstOthers = pkg + ": " + msg;
+			}
+			tvDbgView.setText(lstMissedCalls + "\n\n" + lstWhatsapp + "\n\n" + lstOthers);
+		}
+	};
 	
 	public static DebugFragment newInstance(int sectionNumber) {
 		DebugFragment fragment = new DebugFragment();
@@ -42,10 +68,11 @@ public class DebugFragment extends Fragment
 		nDialog.setTitle("Getting data");
 		nDialog.setIndeterminate(false);
 		nDialog.setCancelable(true);
+		LocalBroadcastManager.getInstance(this.getActivity()).registerReceiver(mMessageReceiver, new IntentFilter("Notification"));
+		//getPairedDevices();
 		
-		getPairedDevices();
-		
-		tvDbgView=(TextView) rootView.findViewById(R.id.txt_debug);
+		tvDbgView = (TextView) rootView.findViewById(R.id.txt_debug);
+		tvDbgView.setMovementMethod(new ScrollingMovementMethod());
 		
 		return rootView;
 	}

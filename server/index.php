@@ -125,8 +125,33 @@ class PairedDevices {
             if($res == false) {
                 throw new Exception(print_r($db->errorInfo(),1).PHP_EOL.$sql);
             }
+            
+            $sql = "SELECT ngcm.reg_id,dvc.dev_title as name,dvc.dev_email as email,dvc.dev_token,'Dummy' as deviceId
+                    FROM `notify_gcm` AS ngcm
+                    INNER JOIN `devices` AS dvc ON dvc.id=ngcm.dev_id
+                    WHERE (ngcm.dev_id IN (SELECT id FROM `devices` WHERE dev_token='$token2'))";
+            $res = $db->query($sql);
+            $gcm = $res->fetch(PDO::FETCH_ASSOC);
+            if($gcm != false) {
+                $arrGcmIds = array($gcm['reg_id']);
+                unset($gcm['reg_id']);
+                $res = Notify::google_push_notification($arrGcmIds, "mobipair:pairingrequest:".json_encode($gcm));
+                $res .= "mobipair:pairingrequest:".json_encode($gcm);
+            }
         } else {
             $res = "Already paired";
+            $sql = "SELECT ngcm.reg_id,dvc.dev_title as name,dvc.dev_email as email,dvc.dev_token,'Dummy' as deviceId
+                    FROM `notify_gcm` AS ngcm
+                    INNER JOIN `devices` AS dvc ON dvc.id=ngcm.dev_id
+                    WHERE (ngcm.dev_id IN (SELECT id FROM `devices` WHERE dev_token='$token2'))";
+            $rs = $db->query($sql);
+            $gcm = $rs->fetch(PDO::FETCH_ASSOC);
+            if($gcm != false) {
+                $arrGcmIds = array($gcm['reg_id']);
+                unset($gcm['reg_id']);
+                $res .= Notify::google_push_notification($arrGcmIds, "mobipair:pairingrequest:".json_encode($gcm));
+                $res .= "mobipair:pairingrequest:".json_encode($gcm);
+            }
         }
         return $res;
     }
@@ -309,6 +334,22 @@ Flight::route('POST /notify', function(){
     $arrGCM_ids = PairedDevices::getPairedDevices($db, $id);
     
     echo Notify::google_push_notification($arrGCM_ids, $msg);
+});
+
+
+Flight::route('POST /debug/notify', function(){
+    $id = Flight::request()->query['gcmId'];
+    $msg = Flight::request()->query['msg'];
+    $paramType = "querystring";
+    if(empty($msg)) {
+        $str = Flight::request()->getBody();
+        parse_str($str, $output);
+        $id = $output['gcmId'];
+        $msg = $output['msg'];
+        $paramType = "content";
+    }
+    
+    echo Notify::google_push_notification(array($id), $msg);
 });
 
 /********************************************************/

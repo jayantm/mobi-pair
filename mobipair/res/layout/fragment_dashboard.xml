@@ -6,12 +6,18 @@
     android:paddingLeft="@dimen/activity_horizontal_margin"
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
-    tools:context="com.orbiworks.mobipair.MainActivity$PlaceholderFragment" >
+    tools:context="com.orbiworks.mobipair.MainActivity$DashboardFragment" >
 
-    <TextView
-        android:id="@+id/section_label"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Dashboard" />
+    <ExpandableListView
+        android:id="@+id/exlst_dashboard"
+        android:layout_width="match_parent"
+        android:layout_height="fill_parent"
+        android:layout_alignParentLeft="true"
+        android:clickable="True"
+        android:layout_alignParentTop="true"
+        android:divider="#000"
+        android:dividerHeight="0.5dp"
+        android:padding="7dp" >
+    </ExpandableListView>
 
 </RelativeLayout>

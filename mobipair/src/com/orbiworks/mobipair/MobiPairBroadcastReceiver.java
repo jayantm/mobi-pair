@@ -37,17 +37,15 @@ public class MobiPairBroadcastReceiver extends BroadcastReceiver {
 					i.putExtra("gcmId", registrationId);
 					context.sendBroadcast(i);
 				} else if (action.equals("com.google.android.c2dm.intent.RECEIVE")) {
-					// string dataS
 					String data = intent.getStringExtra("message");
 					Log.i("MobiPairBroadcastReceiver", data);
-					Intent i = new Intent("com.orbiworks.mobipair.NOTIFICATION_LISTENER_EXAMPLE");
-					i.putExtra("message", "From GCM : " + data);
+					Intent i = new Intent("com.orbiworks.mobipair.PAIR_REQUEST");
+					i.putExtra("message", data);
 					MobiPairApp.getContext().sendBroadcast(i);
 				} else {
 					Log.i("MobiPairBroadcastReceiver", action);
 				}
 			}
-			
 		} catch (Exception ex) {
 			Log.e("MobiPairBroadcastReceiver", ex.getStackTrace().toString());
 			ex.printStackTrace();

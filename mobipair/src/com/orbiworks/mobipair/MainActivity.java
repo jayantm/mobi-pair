@@ -58,7 +58,6 @@ public class MainActivity extends ActionBarActivity
 		
 		mNavigationDrawerFragment = (NavDrawerFragment) fragMngr.findFragmentById(R.id.navigation_drawer);
 		mTitle = getTitle();
-		showNotification();
 		
 		String deviceId = mApplication.device.getDeviceId();
 		Log.i("DeviceID", deviceId);
@@ -114,32 +113,6 @@ public class MainActivity extends ActionBarActivity
 					HttpTask task = new HttpTask();
 					if(MainActivity.htHandler != null) {
 						task.setTaskHandler(MainActivity.htHandler);
-					} else {
-						task.setTaskHandler(new HttpTaskHandler() {
-							@Override
-							public void httpTaskSuccess(String tag, String json) {
-								Log.d(tag, json);
-								JSONArray arrJson = null;
-								JSONObject obj = null;
-								try {
-									arrJson = new JSONArray(json);
-									if(arrJson.length()>0) {
-										obj = arrJson.getJSONObject(0);
-										mApplication.device.setDeviceToken(obj.getString("dev_token"));
-									}
-								} catch (JSONException e) {
-									Log.e(tag, e.getMessage());
-								}
-							}
-							@Override
-							public void httpTaskFail(String tag) {
-								Log.e(tag, "register fail");
-							}
-							@Override
-							public void httpTaskBegin(String tag) {
-								Log.i(tag, "register begins");
-							}
-						});
 					}
 					
 					String qryString = String.format("id=%s&gcmId=%s&title=%s&email=%s",
@@ -149,6 +122,24 @@ public class MainActivity extends ActionBarActivity
 											mApplication.device.getAccountMail());
 					Log.d("MainActivity", qryString);
 					task.execute(HttpTask.POST("/devices?"+qryString));
+				} else if(action.equals("com.orbiworks.mobipair.PAIR_REQUEST")){
+					String message = intent.getStringExtra("message");
+					String contentMessage = "EmailId : ";
+					if(message.startsWith("mobipair:pairingrequest:")){
+						message = message.substring(24);
+						JSONObject jsonMessage = null;
+						String pairingmessage = "Pairing request from : ";
+						try {
+							jsonMessage = new JSONObject(message);
+							pairingmessage += jsonMessage.getString("name");
+							message = pairingmessage;
+							contentMessage += jsonMessage.getString("email");
+						} catch (JSONException e) {
+							Log.e("pairing.request", e.getMessage());
+							e.printStackTrace();
+						}
+					}
+					showNotification(message, contentMessage);
 				}
 			}
 		};
@@ -225,7 +216,7 @@ public class MainActivity extends ActionBarActivity
 		nDialog.dismiss();
 	}
 
-	private void showNotification() {
+	private void showNotification(String subject, String content) {
 		final int notificationId = 1;
 		
 		Intent intentApp = new Intent(getBaseContext(), MainActivity.class);
@@ -249,12 +240,12 @@ public class MainActivity extends ActionBarActivity
 				getBaseContext(), 12345, intentReject, PendingIntent.FLAG_UPDATE_CURRENT);
 
 		NotificationCompat.Builder noti = new NotificationCompat.Builder(getBaseContext())
-			.setSubText("New Pairing Request Sub")
-			.setTicker("New Pairing Request Ticker")
+			.setSubText(subject)
+			.setTicker(subject)
 			.setAutoCancel(true)
 			.setSmallIcon(R.drawable.ic_launcher)
 			.setContentTitle("New Pairing Request")
-			.setContentText("   from longmailid_reallylonglonglongid@gmail.com")
+			.setContentText(content)
 			.setContentIntent(pIntentApp)
 			.addAction(R.drawable.ic_accept, "Accept", pIntentAccept)
 			.addAction(R.drawable.ic_reject, "Reject", pIntentReject);
