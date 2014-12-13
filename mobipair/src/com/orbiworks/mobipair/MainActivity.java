@@ -96,6 +96,8 @@ public class MainActivity extends ActionBarActivity
 		MobiPairApp.setContext(this);
 		htHandler = this;
 		
+		mApplication.setNotification("mobipair:appnotification:[{'id':'com.android.phone', 'title':'Missed Call', 'content':'Missed call from Mirang'},{'id':'com.whatsapp', 'title':'Wife', 'content':'Hi'}]");
+		
 		nDialog = new ProgressDialog(this);
 		nDialog.setMessage("Fetching..");
 		nDialog.setTitle("Getting data");

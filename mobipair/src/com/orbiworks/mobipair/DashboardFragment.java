@@ -2,13 +2,24 @@ package com.orbiworks.mobipair;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import com.orbiworks.mobipair.model.AppNotification;
 
 import android.support.v4.app.Fragment;
 import android.app.Activity;
 import android.content.Context;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
+import android.content.pm.PackageManager.NameNotFoundException;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -24,20 +35,23 @@ public class DashboardFragment extends Fragment {
 	List<String> listDataHeader;
 	HashMap<String, List<String>> listDataChild;
 	List<String> listDataHeaderIcons;
-
+	
+	private MobiPairApp app;
+	
 	public DashboardFragment() {
-		
 	}
 
 	@Override
 	public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 		View rootView = inflater.inflate(R.layout.fragment_dashboard, container, false);
+		app = (MobiPairApp)getActivity().getApplicationContext();
+		
 		expListView = (ExpandableListView) rootView.findViewById(R.id.exlst_dashboard);
 		prepareListData();
 		listAdapter = new ExpandableListAdapter(this.getActivity(), listDataHeader, listDataChild);
 		expListView.setAdapter(listAdapter);
 		setGroupIndicatorToRight();
-
+		
 		return rootView;
 	}
 	
@@ -66,45 +80,22 @@ public class DashboardFragment extends Fragment {
 		listDataHeader = new ArrayList<String>();
 		listDataHeaderIcons = new ArrayList<String>();
 		listDataChild = new HashMap<String, List<String>>();
-
-		// Adding child data
-		listDataHeader.add("Pairing Requests");
-		listDataHeader.add("Missed Calls");
-		listDataHeader.add("Facebook");
-		listDataHeader.add("Whatsapp");
 		
-		listDataHeaderIcons.add("ic_link");
-		listDataHeaderIcons.add("ic_misscall");
-		listDataHeaderIcons.add("ic_facebook");
-		listDataHeaderIcons.add("ic_whatsapp");
-
-		// Adding child data
-		List<String> pairReq = new ArrayList<String>();
-		pairReq.add("Request from: Mirang");
-
-		List<String> missCalls = new ArrayList<String>();
-		missCalls.add("Call from +918X3X4X8X9X");
-		missCalls.add("Call from +919A7A5A4A3A");
-		missCalls.add("Call from +9177E3E7E0E1");
-
-		List<String> facebook = new ArrayList<String>();
-		facebook.add("mirang shared so-so post");
-		facebook.add("mirang liked your post");
-		facebook.add("virang liked your post");
-		
-		List<String> whatsapp = new ArrayList<String>();
-		whatsapp.add("mirang:Interactively benchmark high-quality ROI through mission-critical methods of empowerment.");
-		whatsapp.add("mirang:Progressively maintain team building scenarios rather than premier e-services.");
-		whatsapp.add("virang:Collaboratively incubate process-centric potentialities with viral platforms. Holisticly supply.");
-		whatsapp.add("tanmay:Synergistically pontificate web-enabled imperatives vis-a-vis impactful technologies.");
-		whatsapp.add("japan:Objectively integrate magnetic collaboration and idea-sharing rather than competitive.");
-
-		listDataChild.put(listDataHeader.get(0), pairReq); // Header, Child data
-		listDataChild.put(listDataHeader.get(1), missCalls);
-		listDataChild.put(listDataHeader.get(2), facebook);
-		listDataChild.put(listDataHeader.get(3), whatsapp);
+		HashMap<String,List<AppNotification>> allNotifications = app.getNotifications();
+		for(Map.Entry<String, List<AppNotification>> notificationsMap : allNotifications.entrySet()){
+			String packageName = notificationsMap.getKey();
+			String appName = packageName;
+			List<AppNotification> nots = notificationsMap.getValue();
+			listDataHeader.add(appName);
+			List<String> notificationData = new ArrayList<String>();
+			for(int i = 0 ; i < nots.size() ; i++){
+				AppNotification data = nots.get(i);
+				String displayData = data.getTitle() + "\n" + data.getContent();
+				notificationData.add(displayData);
+			}
+			listDataChild.put(appName, notificationData); // Header, Child data
+        }
 	}
-	
 	public class ExpandableListAdapter extends BaseExpandableListAdapter {
 
 		private Context _context;
@@ -175,17 +166,21 @@ public class DashboardFragment extends Fragment {
 
 			TextView lblListHeader = (TextView) convertView.findViewById(R.id.app_name);
 			lblListHeader.setTypeface(null, Typeface.BOLD);
-			lblListHeader.setText(headerTitle);
+			lblListHeader.setText(app.getAppTitle(headerTitle));
 			
 			ImageView imgAppIcon = (ImageView) convertView.findViewById(R.id.app_icon);
-			String iconName = listDataHeaderIcons.get(groupPosition);
-			int id = getResources().getIdentifier(iconName, "drawable", this._context.getPackageName());
-			imgAppIcon.setImageResource(id);
-			
+			try {
+				imgAppIcon.setImageDrawable(app.getAppIcon(headerTitle));
+			} catch (NameNotFoundException e) {
+				e.printStackTrace();
+			}
 			TextView lblListCount = (TextView) convertView.findViewById(R.id.noti_count);
 			lblListCount.setTypeface(null, Typeface.BOLD);
-			lblListCount.setText(String.valueOf(this._listDataChild.get(this._listDataHeader.get(groupPosition)).size()));
-
+			if(this._listDataChild.get(this._listDataHeader.get(groupPosition)) != null){
+				lblListCount.setText(String.valueOf(this._listDataChild.get(this._listDataHeader.get(groupPosition)).size()));
+			} else {
+				lblListCount.setText("0");
+			}
 			return convertView;
 		}
 
